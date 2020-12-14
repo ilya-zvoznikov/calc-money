@@ -4,10 +4,25 @@ import History from './components/history/History';
 import Operation from './components/operation/Operation';
 
 class App extends Component {
-  state = {
-    transactions: [],
-    description: '',
-    amount: '',
+
+  // state = {
+  //   transactions: JSON.parse(localStorage.getItem('transactions')) || [],
+  //   description: '',
+  //   amount: '',
+  //   resultIncome: parseFloat(localStorage.getItem('resultIncome') || 0),
+  //   resultExpences: parseFloat(localStorage.getItem('resultExpences') || 0),
+  //   resultBalance: parseFloat(localStorage.getItem('resultBalance') || 0),
+  // };
+
+  componentWillMount = () => {
+    this.setState({
+      transactions: JSON.parse(localStorage.getItem('transactions')) || [],
+      description: '',
+      amount: '',
+      resultIncome: parseFloat(localStorage.getItem('resultIncome') || 0),
+      resultExpences: parseFloat(localStorage.getItem('resultExpences') || 0),
+      resultBalance: parseFloat(localStorage.getItem('resultBalance') || 0),
+    });
   }
 
   addTransaction = (add) => {
@@ -24,15 +39,44 @@ class App extends Component {
       transactions,
       description: '',
       amount: '',
-    });
+    },
+      () => {
+        this.getBalance();
+        this.addToStorage();
+      }
+    );
   }
 
   addAmount = e => {
-    this.setState({ amount: e.target.value })
+    this.setState({ amount: parseFloat(parseFloat(e.target.value).toFixed(2)) })
   }
 
   addDesctiption = e => {
     this.setState({ description: e.target.value })
+  }
+
+  getInOrOut = transactionType => (
+    this.state.transactions
+      .filter(item => transactionType ? item.add : !item.add)
+      .reduce((acc, item) => (acc + item.amount).toFixed(2), 0)
+  );
+
+  getBalance = () => {
+    const resultIncome = this.getInOrOut(true);
+    const resultExpences = this.getInOrOut(false);
+    const resultBalance = (resultIncome - resultExpences).toFixed(2);
+    this.setState({
+      resultIncome,
+      resultExpences,
+      resultBalance,
+    })
+  }
+
+  addToStorage = () => {
+    localStorage.setItem('transactions', JSON.stringify(this.state.transactions));
+    localStorage.setItem('resultBalance', this.state.resultBalance);
+    localStorage.setItem('resultExpences', this.state.resultExpences);
+    localStorage.setItem('resultIncome', this.state.resultIncome)
   }
 
   render() {
@@ -46,7 +90,7 @@ class App extends Component {
         <main>
           <div className="container">
             <Total
-              transactions={this.state.transactions}
+              state={this.state}
             />
             <History
               transactions={this.state.transactions}
